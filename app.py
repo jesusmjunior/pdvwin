@@ -34,7 +34,7 @@ def autenticar_usuario():
                 st.session_state["autenticado"] = True
                 st.session_state["usuario"] = usuario
                 st.success("Login realizado com sucesso!")
-                st.experimental_rerun()
+                st.rerun()  # Usando rerun() em vez de experimental_rerun()
             else:
                 st.error("Senha incorreta.")
         else:
@@ -198,25 +198,17 @@ def render_painel():
         st.error(f"Erro ao carregar dados para o painel: {e}")
         return
 
-    try:
-        import plotly.express as px
-
-        st.subheader("Total por Forma de Pagamento")
-        pgto_group = venda_df.groupby("ID_FORMA_PGTO")["TOTAL"].sum().reset_index()
-        fig_pgto = px.bar(pgto_group, x="ID_FORMA_PGTO", y="TOTAL")
-        st.plotly_chart(fig_pgto)
-
-        st.subheader("Evolução Diária de Vendas")
-        diario = venda_df.groupby(venda_df["DATA"].dt.date)["TOTAL"].sum().reset_index()
-        fig_dia = px.line(diario, x="DATA", y="TOTAL")
-        st.plotly_chart(fig_dia)
-
-        st.metric("Total Geral de Vendas", f"R$ {venda_df['TOTAL'].sum():,.2f}")
-
-    except ModuleNotFoundError:
-        st.warning("A biblioteca plotly não está instalada. Execute: pip install plotly")
-    except Exception as e:
-        st.error(f"Erro ao gerar gráficos: {e}")
+    # Versão sem Plotly (usando gráficos nativos do Streamlit)
+    st.subheader("Total por Forma de Pagamento")
+    pgto_group = venda_df.groupby("ID_FORMA_PGTO")["TOTAL"].sum().reset_index()
+    st.bar_chart(pgto_group.set_index("ID_FORMA_PGTO"))
+    
+    st.subheader("Evolução Diária de Vendas")
+    diario = venda_df.groupby(venda_df["DATA"].dt.date)["TOTAL"].sum().reset_index()
+    st.line_chart(diario.set_index("DATA"))
+    
+    total_vendas = venda_df['TOTAL'].sum()
+    st.metric("Total Geral de Vendas", f"R$ {total_vendas:,.2f}")
 
 # Função principal que gerencia todo o fluxo do aplicativo
 def main():
@@ -230,7 +222,7 @@ def main():
     st.sidebar.title("🔹 Menu PDV")
     if st.sidebar.button("Sair"):
         st.session_state["autenticado"] = False
-        st.experimental_rerun()
+        st.rerun()  # Usando rerun() em vez de experimental_rerun()
 
     menu = st.sidebar.radio("Escolha a opção:", [
         "Cadastro Produto", "Cadastro Cliente", "Registrar Venda", "Relatórios", "Painel"])
